@@ -2,7 +2,7 @@ import { randomUUID } from "crypto";
 import { writeFile, unlink } from "fs/promises";
 import { join } from "path";
 import EPub from "epub2";
-import type { ParseResponse } from "@/types";
+import type { ParseResponse, Chapter } from "@/types";
 
 function stripHtml(html: string): string {
   return html
@@ -56,33 +56,36 @@ export async function parseEpub(
       (epub.metadata as Record<string, string>)?.title ??
       filename.replace(/\.epub$/i, "");
 
-    const chapters = epub.flow ?? [];
-    const textParts: string[] = [];
+    const flowChapters = epub.flow ?? [];
+    const allWords: string[] = [];
+    const chapters: Chapter[] = [];
 
-    for (const chapter of chapters) {
-      if (!chapter.id) continue;
+    for (const flowChapter of flowChapters) {
+      if (!flowChapter.id) continue;
       try {
         const html = await new Promise<string>((resolve, reject) => {
-          epub.getChapter(chapter.id as string, (err: Error, text?: string) => {
+          epub.getChapter(flowChapter.id as string, (err: Error, text?: string) => {
             if (err) reject(err);
             else resolve(text ?? "");
           });
         });
         const plain = stripHtml(html);
-        if (plain.length > 0) textParts.push(plain);
+        const chapterWords = plain.split(/\s+/).filter((w) => w.length > 0);
+        if (chapterWords.length === 0) continue;
+
+        chapters.push({
+          title: flowChapter.title ?? `Chapter ${chapters.length + 1}`,
+          startIndex: allWords.length,
+        });
+        allWords.push(...chapterWords);
       } catch {
         // skip unreadable chapters
       }
     }
 
-    const words = textParts
-      .join(" ")
-      .split(/\s+/)
-      .filter((w) => w.length > 0);
-
     const cover = await extractCover(epub);
 
-    return { words, title, wordCount: words.length, cover };
+    return { words: allWords, title, wordCount: allWords.length, chapters, cover };
   } finally {
     await unlink(tmpPath).catch(() => {});
   }

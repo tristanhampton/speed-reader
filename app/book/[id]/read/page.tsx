@@ -41,11 +41,12 @@ export default async function ReadPage({
   }
 
   const arrayBuffer = await epubBlob.arrayBuffer();
-  const { words } = await parseEpub(arrayBuffer, book.title);
+  const { words, chapters } = await parseEpub(arrayBuffer, book.title);
 
   return (
     <ReaderView
       words={words}
+      chapters={chapters}
       title={book.title}
       bookId={book.id}
       userId={user.id}

@@ -1,7 +1,13 @@
+export interface Chapter {
+  title: string;
+  startIndex: number;
+}
+
 export interface ParseResponse {
   words: string[];
   title: string;
   wordCount: number;
+  chapters: Chapter[];
   cover?: { buffer: Buffer; mimeType: string };
   error?: string;
 }
