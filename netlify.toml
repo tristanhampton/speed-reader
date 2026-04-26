@@ -1,0 +1,14 @@
+[build]
+  command   = "npm run build"
+  publish   = ".next"
+
+[[plugins]]
+  package = "@netlify/plugin-nextjs"
+
+# The book reader downloads + parses EPUBs server-side, which can take a few
+# seconds for large files. Raise the function timeout to avoid 10s cutoffs.
+[functions]
+  node_bundler = "nft"
+
+[functions."___netlify-server-handler"]
+  timeout = 60
